@@ -2,4 +2,5 @@ build/
 *.elf
 *.o
 *.bin
+klog.txt
 .DS_Store
