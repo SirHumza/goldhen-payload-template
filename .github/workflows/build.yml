@@ -1,0 +1,33 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  payload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM 18
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18 lld-18 llvm-18
+
+      - name: Build the SDK from git
+        run: PS4_SDK_DEST="$HOME/ps4-payload-sdk" ./scripts/setup_sdk.sh
+
+      - name: Build the payload
+        run: make PS4_PAYLOAD_SDK="$HOME/ps4-payload-sdk"
+
+      - name: Assert daemon-world linkage
+        run: |
+          make check PS4_PAYLOAD_SDK="$HOME/ps4-payload-sdk"
+          llvm-readelf-18 -d build/payload.elf | grep -q libkernel_web.sprx
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: payload
+          path: build/payload.elf
